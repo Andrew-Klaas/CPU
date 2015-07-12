@@ -1,0 +1,333 @@
+// Conor Gardner, Andrew Klaas, Alyssa Romeo
+// ECE 411 - FALL 2014
+
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <string>
+#include <sstream>
+
+#include "stdlib.h"
+#include "lc3x.h"
+
+#define MAX 150	
+
+using namespace std;
+
+
+string instructions[MAX];
+
+
+/*	TO USE ASSEMBLER:
+ *		assembler can only handle specific instructions, these are:
+ *			SUB, MULT, DIV, XOR, OR, NOR, XNOR, NAND
+ *		all other instructions will produce garbage
+ *		if you want to use other instructions / something fancy, USE THE REAL ASSEMBLER!! :p
+ *		proper instruction format:
+ *			[INSTRUCTION][ ][R][#][,][R][#],[R][#]
+ *			example:
+ *				SUB R0,R1,R2
+ *				R0 <- R1 - R2
+ *		leave a newline at the end of the input file
+ *		assembler will only assemble a maximum amount of instructions
+ *		change "MAX" to allow longer programs
+ *		command to run assembler:
+ *			./mp3 [input_file.txt]
+ */
+
+
+
+string register_conversion(string reg)
+{
+
+	string x;
+
+	if (reg == "R0")
+		x = "000";
+
+	else if (reg == "R1")
+		x = "001";
+			
+	else if (reg == "R2")
+		x = "010";
+
+	else if (reg == "R3")
+		x = "011";
+
+	else if (reg == "R4")
+		x = "100";
+
+	else if (reg == "R5")
+		x = "101";
+
+	else if (reg == "R6")
+		x = "110";
+
+	else if (reg == "R7")
+		x = "111";
+
+	else
+		x = "000";
+
+	return x;
+
+}
+
+string get_code(string op)
+{
+	string x;
+
+	if (op == "SUB")
+		x = "000";
+
+	else if (op == "MULT")
+		x = "001";
+
+	else if (op == "DIV")
+		x = "010";
+
+	else if (op == "XOR")
+		x = "011";
+
+	else if (op == "OR")
+		x = "100";
+
+	else if (op == "NOR")
+		x = "101";
+
+	else if (op == "XNOR")
+		x = "110";
+
+	else if (op == "NAND")
+		x = "111";
+
+	else
+		x = "000";
+
+	
+
+	return x;
+
+
+}
+
+
+string breakdown(string opcode, string dest, string sr1, string sr2)
+{
+	
+	string machine_code = "1000";
+	string machine_code_dest = register_conversion(dest);
+	string machine_code_sr1 = register_conversion(sr1);
+	string machine_code_sr2 = register_conversion(sr2);
+	string machine_code_new_code = get_code(opcode);
+
+	machine_code += machine_code_dest;
+	machine_code += machine_code_sr1;
+	machine_code += machine_code_new_code;
+	machine_code += machine_code_sr2;
+
+
+	return machine_code;
+
+}
+
+
+
+string hex_val(string digits)
+{
+	if (digits == "0000")
+		return "0";
+	else if (digits == "0001")
+		return "1";
+	else if	(digits == "0010")
+		return "2";
+	else if (digits == "0011")
+		return "3";
+	else if (digits == "0100")
+		return "4";
+	else if (digits == "0101")
+		return "5";
+	else if (digits == "0110")
+		return "6";
+	else if (digits == "0111")
+		return "7";
+	else if (digits == "1000")
+		return "8";
+	else if (digits == "1001")
+		return "9";
+	else if (digits == "1010")
+		return "A";
+	else if (digits == "1011")
+		return "B";
+	else if (digits == "1100")
+		return "C";
+	else if (digits == "1101")
+		return "D";
+	else if (digits == "1110")
+		return "E";
+	else
+		return "F";
+
+}
+
+string convert_to_hex(string machine_code)
+{
+
+	string tmp1, tmp2, tmp3, tmp4, hex;
+
+	tmp1 = machine_code.substr(0, 4);
+	tmp2 += machine_code.substr(4, 4);
+	tmp3 += machine_code.substr(8, 4);
+	tmp4 += machine_code.substr(12, 4);
+
+	//cout << tmp4 << " " << tmp3 << " " << tmp2 << " " << tmp1;
+
+	hex += "DATA2 4x" + hex_val(tmp1) + hex_val(tmp2) + hex_val(tmp3) + hex_val(tmp4);
+	
+	return hex;
+
+}
+
+bool proper_opcode(string op)
+{
+
+	if (op == "SUB")
+		return true;
+
+	else if (op == "MULT")
+		return true;
+
+	else if (op == "DIV")
+		return true;
+
+	else if (op == "XOR")
+		return true;
+
+	else if (op == "OR")
+		return true;
+
+	else if (op == "NOR")
+		return true;
+
+	else if (op == "XNOR")
+		return true;
+
+	else if (op == "NAND")
+		return true;
+
+	else return false;
+
+
+}
+
+
+
+
+/* returns 0 on error, returns 1 if successful */
+int main(int argc, char *argv[])
+{
+	// check for file from command line
+	char* input_file;
+
+	// make sure we have the proper number of arguments
+	if (argc !=  2) {
+		cout << "INVALID ARGUMENTS \n";
+		return 0;
+	}
+
+	// retrieve file from command line
+	input_file = argv[1];
+	
+	// read from input file
+	ifstream txtfile;
+
+	// open file found from command line
+	txtfile.open(input_file);
+	if (!txtfile.is_open())
+	{
+		cout << "FILE CANNOT OPEN! FILE CANNOT OPEN! \n";
+		return 0;
+
+	}
+		
+	int instr_counter = 0;
+
+	string opcode;
+
+	//	read file!
+	while (! getline(txtfile, opcode , ' ').eof())
+	{
+
+		if (proper_opcode(opcode))
+		{
+
+			string dest, sr1, sr2;
+
+
+			// get appropriate fields deliminated by space
+			getline(txtfile, dest, ',');
+			getline(txtfile, sr1, ',');
+			getline(txtfile, sr2, '\n');
+
+
+			//cout << opcode  << dest <<  sr1 << sr2 << "|";
+
+			string machine_code = breakdown(opcode, dest, sr1, sr2);
+
+			cout << machine_code << "\n";
+
+			string hex_code = convert_to_hex(machine_code);
+
+			cout << hex_code << "\n";
+
+
+			// move on to next word	
+			//instructions[instr_counter] = machine_code;
+			instructions[instr_counter] = hex_code;
+			instr_counter++;
+
+			if (instr_counter > MAX) break;
+		}
+
+		else
+		{
+
+			string whole_line, normal;
+			
+			getline(txtfile, whole_line, '\n');
+
+			normal += opcode + " " + whole_line;
+
+			instructions[instr_counter] = normal;
+			instr_counter++;
+			if (instr_counter > MAX) break;
+
+
+		}
+
+
+	}
+
+	txtfile.close();
+
+	ofstream finalfile ("lc3x-test.asm");
+	if (!finalfile.is_open())
+	{
+		cout << "FILE CANNOT BE WRITTEN TO! FILE CANNOT BE WRITTEN TO! \n";
+		return 0;
+	}
+
+	//	write machine code to file
+	for (int i = 0; i < instr_counter; i++)
+	{
+		finalfile << instructions[i];
+		finalfile << "\n";
+	}
+	
+	//cout << "\n" << instr_counter;
+
+	finalfile.close();
+
+	return 1;
+
+}
